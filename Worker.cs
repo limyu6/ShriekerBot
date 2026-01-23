@@ -1,8 +1,18 @@
-namespace ShriekerBot
+namespace ShriekerBot;
+
+public class Worker(ILogger<Worker> logger, IConfiguration configuration) : BackgroundService
 {
-    public class Worker(ILogger<Worker> logger) : BackgroundService
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+        string? discordToken = configuration["Discord:Token"];
+        if (string.IsNullOrEmpty(discordToken) || discordToken.Length < 10) 
+        {
+            logger.LogError("[Error] Discord Bot Token not found or Invalid Discord Bot Token! Please check secret.json(windows) or environment variable(linux).");
+            return;
+        }
+        logger.LogInformation($"Discord Bot Token: {discordToken[..4]}************{discordToken[^4..]}");
+
+        try
         {
             while (!stoppingToken.IsCancellationRequested)
             {
@@ -10,8 +20,18 @@ namespace ShriekerBot
                 {
                     logger.LogInformation("Worker running at: {time}", DateTimeOffset.Now);
                 }
-                await Task.Delay(1000, stoppingToken);
+
+                await Task.Delay(10000, stoppingToken);
             }
+        }
+        catch (OperationCanceledException)
+        {
+            logger.LogInformation("Worker is stopping gracefully...");
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Unhandled exception occured!");
+            throw;
         }
     }
 }
