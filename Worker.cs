@@ -1,4 +1,4 @@
-using Discord;
+﻿using Discord;
 using Discord.WebSocket;
 
 namespace ShriekerBot;
@@ -9,23 +9,26 @@ public class Worker(
     DiscordSocketClient client
     ) : BackgroundService
 {
+    private readonly string? _discordToken = config["Discord:Token"];
+    private readonly string _discordPrefix = config["Discord:Prefix"] ?? "!";
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        string? discordToken = config["Discord:Token"];
-        string? discordPrefix = config["Discord:Prefix"] ?? "!";
-        if (string.IsNullOrEmpty(discordToken) || discordToken.Length < 10) 
+        if (string.IsNullOrEmpty(_discordToken) || _discordToken.Length < 10) 
         {
             logger.LogError("[Error] Discord Bot Token not found or Invalid Discord Bot Token! Please check secret.json(windows) or environment variable(linux).");
             return;
         }
-        logger.LogInformation($"Discord Bot Token: {discordToken[..4]}************{discordToken[^4..]}");
+        logger.LogInformation($"Discord Bot Token: {_discordToken[..4]}************{_discordToken[^4..]}");
 
         try
         {
             client.Log += LogAsync;
 
+            client.MessageReceived += OnMessageRecieved;
+
             logger.LogInformation("Logging in to Discord...");
-            await client.LoginAsync(TokenType.Bot, discordToken);
+            await client.LoginAsync(TokenType.Bot, _discordToken);
 
             logger.LogInformation("Starting Discord client...");
             await client.StartAsync();
@@ -69,5 +72,26 @@ public class Worker(
         };
         logger.Log(severity, msg.Exception, "[Discord] {Message}", msg.Message);
         return Task.CompletedTask;
+    }
+
+    private async Task OnMessageRecieved(SocketMessage msg)
+    {
+        if (msg.Author.IsBot) return;
+        if (msg.Channel.Name != "機器人測試") return;
+        if (!msg.Content.StartsWith(_discordPrefix)) return;
+        string command = msg.Content[_discordPrefix.Length..].Trim().ToLower();
+        switch (command)
+        {
+            case "wake":
+                await msg.Channel.SendMessageAsync("Waking linked PC...");
+                break;
+            case "晚安":
+                await msg.Channel.SendMessageAsync("晚安，瑪卡巴卡！");
+                break;
+            default:
+                await msg.Channel.SendMessageAsync($"Unknown command: {command}");
+                break;
+        }
+        
     }
 }
