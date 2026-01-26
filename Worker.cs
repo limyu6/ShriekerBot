@@ -79,6 +79,7 @@ public class Worker(
                         .Value.ToString()
                         ?? config["WoL:MacIp"]!;
                     string? targetIp = config["WoL:TargetIp"];
+                    
                     if (!string.IsNullOrEmpty(targetIp) && await PingHost(targetIp)) 
                     {
                         logger.LogWarning("PC is already Online!");
@@ -209,7 +210,7 @@ public class Worker(
         using var pinger = new Ping();
         try
         {
-            var reply = await pinger.SendPingAsync(targetIp, 100);
+            var reply = await pinger.SendPingAsync(targetIp, 1000);
             return reply.Status == IPStatus.Success;
         }
         catch
