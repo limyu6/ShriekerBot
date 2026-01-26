@@ -177,7 +177,8 @@ public class Worker(
         await command.ModifyOriginalResponseAsync(msg => msg.Content = "Computer should wake up in few seconds...");
         if (string.IsNullOrEmpty(targetIp))
         {
-            await command.ModifyOriginalResponseAsync(msg => msg.Content = "Skipped verification: No IP configured");
+            await command.ModifyOriginalResponseAsync(msg => msg.Content = "🚀 Magic Packet sent!");
+            await command.FollowupAsync("Skipped verification: No IP configured");
             return;
         }
         bool isWaked = false;
