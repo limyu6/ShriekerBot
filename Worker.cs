@@ -87,7 +87,7 @@ public class Worker(
                         return;
                     }
 
-                    await SendWakeOnLan(macIp);
+                    await SendWakeOnLan(macIp, targetIp);
                     await command.ModifyOriginalResponseAsync(msg => msg.Content = "🚀 Magic Packet sent!");
 
                     _ = Task.Run(async () =>
@@ -153,7 +153,7 @@ public class Worker(
         }
     }
 
-    private async Task SendWakeOnLan(string macAddress)
+    private async Task SendWakeOnLan(string macAddress, string targetIp)
     {
         var macBytes = System.Net.NetworkInformation.PhysicalAddress
             .Parse(macAddress.Replace(":","").Replace("-",""))
@@ -170,7 +170,13 @@ public class Worker(
 
         using var client = new UdpClient();
         client.EnableBroadcast = true;
-        await client.SendAsync(packet, packet.Length, new IPEndPoint(IPAddress.Broadcast, 9));
+        if (string.IsNullOrEmpty(targetIp)) { 
+            await client.SendAsync(packet, packet.Length, new IPEndPoint(IPAddress.Broadcast, 9));
+            return;
+        }
+        string broadcastIp = targetIp.Substring(0, targetIp.LastIndexOf('.') + 1) + "255";
+        logger.LogInformation($"Sending Magic Packet to {broadcastIp}...");
+        await client.SendAsync(packet, packet.Length, new IPEndPoint(IPAddress.Parse(broadcastIp), 9));
     }
     
     private async Task VerifyPcWakeUp(SocketSlashCommand command, string? targetIp)
