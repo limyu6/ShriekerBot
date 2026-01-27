@@ -32,28 +32,19 @@ b. Prepare Service File：
 sudo nano /etc/systemd/system/shriekerbot.service
 {
 [Unit]
-Description=Shrieker Discord Bot Service
-# 描述：Shrieker Discord 機器人服務
-After=network.target network-online.target
-# 在網路完全啟動後才執行
+Description=Shrieker Discord Bot Service # 描述：Shrieker Discord 機器人服務
+After=network.target network-online.target # 在網路完全啟動後才執行
 
 [Service]
-Type=simple
-# 類型：簡單 (直接執行)
-User=admin
-# 使用者：以 admin 身分執行 (避免用 root 造成權限混亂)
-WorkingDirectory=/home/admin/ShriekerBot
-# 工作目錄：程式的家
-ExecStart={dotnet的路徑} run --configuration Release
-# 啟動指令：用 dotnet run 執行正式版 (Release)
-Restart=always
-# 重啟策略：無論如何都要重啟 (當掉或被殺掉都會復活)
-RestartSec=10
-# 重啟間隔：死掉後等 10 秒再復活
+Type=simple # 類型：簡單 (直接執行)
+User=admin # 使用者：以 admin 身分執行 (避免用 root 造成權限混亂)
+WorkingDirectory=/home/admin/ShriekerBot # 工作目錄：程式的家
+ExecStart={dotnet的路徑} run --configuration Release # 啟動指令：用 dotnet run 執行正式版 (Release)
+Restart=always # 重啟策略：無論如何都要重啟 (當掉或被殺掉都會復活)
+RestartSec=10 # 重啟間隔：死掉後等 10 秒再復活
 
 [Install]
-WantedBy=multi-user.target
-# 安裝目標：在多用戶模式 (標準開機模式) 下啟用
+WantedBy=multi-user.target # 安裝目標：在多用戶模式 (標準開機模式) 下啟用
 }
 Ctrl + O -> Enter -> Ctrl + X
 c. Start and Enable：
