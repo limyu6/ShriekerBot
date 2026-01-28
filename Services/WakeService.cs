@@ -19,7 +19,10 @@ internal class WakeService(
                 .FirstOrDefault(x => x.Name == "mac")?
                 .Value.ToString()
                 ?? config["WoL:MacIp"]!;
-            string? targetIp = config["WoL:TargetIp"];
+            string? targetIp = command.Data.Options
+                .FirstOrDefault(x => x.Name == "ip")?
+                .Value.ToString()
+                ?? config["WoL:TargetIp"];
 
             if (!string.IsNullOrEmpty(targetIp) && await PingHostAsync(targetIp))
             {

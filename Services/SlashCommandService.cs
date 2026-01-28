@@ -47,6 +47,7 @@ internal class SlashCommandService(
             .WithName("wake")
             .WithDescription("Wake the linked PC")
             .AddOption("mac", ApplicationCommandOptionType.String, "The MAC address to wake", isRequired: false)
+            .AddOption("ip", ApplicationCommandOptionType.String, "The IP address to wake", isRequired: false)
             .Build());
 
         foreach (var guildId in guildIds)
@@ -73,7 +74,7 @@ internal class SlashCommandService(
     private async Task OnMessageRecievedAsync(SocketMessage msg)
     {
         if (msg.Author.IsBot) return;
-        logger.LogInformation($"{msg.Author.Username}: {msg.Content}");
+        //logger.LogInformation($"{msg.Author.Username}: {msg.Content}");
         if (msg.Content == "!wake")
             await msg.Channel.SendMessageAsync("Waking linked PC...");
     }
