@@ -1,6 +1,7 @@
 using ShriekerBot;
 using Discord;
 using Discord.WebSocket;
+using ShriekerBot.Services;
 
 var builder = Host.CreateApplicationBuilder(args);
 
@@ -10,8 +11,10 @@ var socketConfig = new DiscordSocketConfig
 };
 
 builder.Services.AddSingleton(new DiscordSocketClient(socketConfig));
+builder.Services.AddSingleton<DiscordLogAdapter>();
+builder.Services.AddSingleton<SlashCommandService>();
 
-builder.Services.AddHostedService<Worker>();
+builder.Services.AddHostedService<DiscordBotHost>();
 
 var host = builder.Build();
 host.Run();
