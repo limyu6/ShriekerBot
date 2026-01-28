@@ -13,6 +13,8 @@ var socketConfig = new DiscordSocketConfig
 builder.Services.AddSingleton(new DiscordSocketClient(socketConfig));
 builder.Services.AddSingleton<DiscordLogAdapter>();
 builder.Services.AddSingleton<SlashCommandService>();
+builder.Services.AddSingleton<WakeService>();
+builder.Services.AddSingleton<ActiveService>();
 
 builder.Services.AddHostedService<DiscordBotHost>();
 

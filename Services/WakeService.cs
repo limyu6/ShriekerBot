@@ -1,4 +1,5 @@
-﻿using Discord.WebSocket;
+﻿using Discord.Rest;
+using Discord.WebSocket;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
@@ -9,10 +10,18 @@ internal class WakeService(
     ILogger<DiscordBotHost> logger,
     IConfiguration config)
 {
-    internal async Task HandleWakeAsync(SocketSlashCommand command)
+    private RestUserMessage? _lastMessage;
+    internal async Task HandleWakeAsync(SocketSlashCommand command, RestUserMessage? activeMessage = null)
     {
-        logger.LogInformation($"{command.User.Username} used /wake.");
-        await command.RespondAsync("🔍 Checking PC status...");
+        if (activeMessage == null)
+        {
+            await command.RespondAsync("🔍 Checking PC status...");
+            _lastMessage = await command.GetOriginalResponseAsync();
+        }
+        else
+            _lastMessage = await command.Channel.SendMessageAsync(
+                text: "🔍 Checking PC status...",
+                messageReference: new Discord.MessageReference(activeMessage.Id));
         try
         {
             string macIp = command.Data.Options
@@ -26,25 +35,25 @@ internal class WakeService(
 
             if (!string.IsNullOrEmpty(targetIp) && await PingHostAsync(targetIp))
             {
-                logger.LogWarning("PC is already Online!");
-                await command.ModifyOriginalResponseAsync(msg => msg.Content = "⚠️ PC is already Online!");
+                if (activeMessage == null) //send by user
+                {
+                    logger.LogWarning("PC is already Online!");
+                    await _lastMessage.ModifyAsync(msg => msg.Content = "⚠️ PC is already Online!"); 
+                }
                 return;
             }
 
             await SendMagicPacketAsync(macIp, targetIp);
-            await command.ModifyOriginalResponseAsync(msg => msg.Content = "🚀 Magic Packet sent!");
+            await _lastMessage.ModifyAsync(msg => msg.Content = "🚀 Magic Packet sent!");
 
-            _ = Task.Run(async () =>
+            try
             {
-                try
-                {
-                    await VerifyPcWakeUpAsync(command, targetIp);
-                }
-                catch (Exception ex)
-                {
-                    logger.LogError(ex, "Background verification failed.");
-                }
-            });
+                VerifyPcWakeUpAsync(command, targetIp).Wait();
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Background verification failed.");
+            }
         }
         catch (Exception ex)
         {
@@ -81,11 +90,12 @@ internal class WakeService(
 
     private async Task VerifyPcWakeUpAsync(SocketSlashCommand command, string? targetIp)
     {
-        await command.ModifyOriginalResponseAsync(msg => msg.Content = "Computer should wake up in few seconds...");
+        var thisMessage = await command.Channel.SendMessageAsync(
+                            text: "Computer should wake up in few seconds...",
+                            messageReference: new Discord.MessageReference(_lastMessage!.Id));
         if (string.IsNullOrEmpty(targetIp))
         {
-            await command.ModifyOriginalResponseAsync(msg => msg.Content = "🚀 Magic Packet sent!");
-            await command.FollowupAsync("Skipped verification: No IP configured");
+            await thisMessage.ModifyAsync(msg => msg.Content = "Skipped verification: No IP configured");
             return;
         }
         bool isWaked = false;
@@ -97,21 +107,21 @@ internal class WakeService(
                 break;
             }
             if (i % 3 == 0)
-                await command.ModifyOriginalResponseAsync(msg => msg.Content = $"Computer should wake up in few seconds .   ({i / 2 + 1}/60s)");
+                await thisMessage.ModifyAsync(msg => msg.Content = $"Computer should wake up in few seconds .   ({i / 2 + 1}/60s)");
             if (i % 3 == 1)
-                await command.ModifyOriginalResponseAsync(msg => msg.Content = $"Computer should wake up in few seconds ..  ({i / 2 + 1}/60s)");
+                await thisMessage.ModifyAsync(msg => msg.Content = $"Computer should wake up in few seconds ..  ({i / 2 + 1}/60s)");
             if (i % 3 == 2)
-                await command.ModifyOriginalResponseAsync(msg => msg.Content = $"Computer should wake up in few seconds ... ({i / 2 + 1}/60s)");
+                await thisMessage.ModifyAsync(msg => msg.Content = $"Computer should wake up in few seconds ... ({i / 2 + 1}/60s)");
             await Task.Delay(500);
         }
 
         if (isWaked)
-            await command.ModifyOriginalResponseAsync(msg => msg.Content = "✅ Success! PC is now Online!");
+            await thisMessage.ModifyAsync(msg => msg.Content = "✅ Success! PC is now Online!");
         else
-            await command.ModifyOriginalResponseAsync(msg => msg.Content = "❌ Packet sent, but PC did not respond. Check BIOS/Network settings.");
+            await thisMessage.ModifyAsync(msg => msg.Content = "❌ Packet sent, but PC did not respond. Check BIOS/Network settings.");
     }
 
-    private async Task<bool> PingHostAsync(string targetIp)
+    internal async Task<bool> PingHostAsync(string targetIp)
     {
         using var pinger = new Ping();
         try

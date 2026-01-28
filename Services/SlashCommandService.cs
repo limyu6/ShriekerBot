@@ -7,7 +7,8 @@ internal class SlashCommandService(
     ILogger<DiscordBotHost> logger,
     IConfiguration config,
     DiscordSocketClient client,
-    WakeService wakeService)
+    WakeService wakeService,
+    ActiveService activeService)
 {
     internal void Initialize()
     {
@@ -23,7 +24,12 @@ internal class SlashCommandService(
         switch (command.CommandName) //Add commands here (1/2)
         {
             case "wake":
+                logger.LogInformation($"{command.User.Username} used /wake.");
                 await wakeService.HandleWakeAsync(command);
+                break;
+            case "active":
+                logger.LogInformation($"{command.User.Username} used /active.");
+                await activeService.HandleActiveAsync(command);
                 break;
             default:
                 await command.RespondAsync($"Unknown command: {command.CommandName}");
@@ -48,6 +54,11 @@ internal class SlashCommandService(
             .WithDescription("Wake the linked PC")
             .AddOption("mac", ApplicationCommandOptionType.String, "The MAC address to wake", isRequired: false)
             .AddOption("ip", ApplicationCommandOptionType.String, "The IP address to wake", isRequired: false)
+            .Build());
+        slashCommands.Add(new SlashCommandBuilder()
+            .WithName("active")
+            .WithDescription("Check if the bot is active")
+            .AddOption("sip", ApplicationCommandOptionType.String, "The server ip to activate", isRequired: true)
             .Build());
 
         foreach (var guildId in guildIds)
