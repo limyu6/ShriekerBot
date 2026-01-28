@@ -11,12 +11,12 @@ internal class SlashCommandService(
 {
     internal void Initialize()
     {
-        client.Ready += ClientReady;
-        client.SlashCommandExecuted += SlashCommandHandler;
-        client.MessageReceived += OnMessageRecieved;
+        client.Ready += RegisterGuildCommandsAsync;
+        client.SlashCommandExecuted += SlashCommandHandlerAsync;
+        client.MessageReceived += OnMessageRecievedAsync;
         logger.LogInformation("SlashCommandService initialized.");
     }
-    private async Task SlashCommandHandler(SocketInteraction interaction)
+    private async Task SlashCommandHandlerAsync(SocketInteraction interaction)
     {
         if (interaction is not SocketSlashCommand command) return;
 
@@ -32,7 +32,7 @@ internal class SlashCommandService(
 
     }
 
-    private async Task ClientReady()
+    private async Task RegisterGuildCommandsAsync()
     {
         var guildIds = config.GetSection("Discord:GuildIds").Get<ulong[]>();
 
@@ -70,7 +70,7 @@ internal class SlashCommandService(
         }
     }
 
-    private async Task OnMessageRecieved(SocketMessage msg)
+    private async Task OnMessageRecievedAsync(SocketMessage msg)
     {
         if (msg.Author.IsBot) return;
         logger.LogInformation($"{msg.Author.Username}: {msg.Content}");

@@ -21,21 +21,21 @@ internal class WakeService(
                 ?? config["WoL:MacIp"]!;
             string? targetIp = config["WoL:TargetIp"];
 
-            if (!string.IsNullOrEmpty(targetIp) && await PingHost(targetIp))
+            if (!string.IsNullOrEmpty(targetIp) && await PingHostAsync(targetIp))
             {
                 logger.LogWarning("PC is already Online!");
                 await command.ModifyOriginalResponseAsync(msg => msg.Content = "⚠️ PC is already Online!");
                 return;
             }
 
-            await SendWakeOnLan(macIp, targetIp);
+            await SendMagicPacketAsync(macIp, targetIp);
             await command.ModifyOriginalResponseAsync(msg => msg.Content = "🚀 Magic Packet sent!");
 
             _ = Task.Run(async () =>
             {
                 try
                 {
-                    await VerifyPcWakeUp(command, targetIp);
+                    await VerifyPcWakeUpAsync(command, targetIp);
                 }
                 catch (Exception ex)
                 {
@@ -49,7 +49,7 @@ internal class WakeService(
             await command.ModifyOriginalResponseAsync(msg => msg.Content = $"❌ Error: {ex.Message}");
         }
     }
-    private async Task SendWakeOnLan(string macAddress, string? targetIp)
+    private async Task SendMagicPacketAsync(string macAddress, string? targetIp)
     {
         var macBytes = System.Net.NetworkInformation.PhysicalAddress
             .Parse(macAddress.Replace(":", "").Replace("-", ""))
@@ -76,7 +76,7 @@ internal class WakeService(
         await client.SendAsync(packet, packet.Length, new IPEndPoint(IPAddress.Parse(broadcastIp), 9));
     }
 
-    private async Task VerifyPcWakeUp(SocketSlashCommand command, string? targetIp)
+    private async Task VerifyPcWakeUpAsync(SocketSlashCommand command, string? targetIp)
     {
         await command.ModifyOriginalResponseAsync(msg => msg.Content = "Computer should wake up in few seconds...");
         if (string.IsNullOrEmpty(targetIp))
@@ -88,7 +88,7 @@ internal class WakeService(
         bool isWaked = false;
         for (int i = 0; i < 120; i++)
         {
-            if (await PingHost(targetIp))
+            if (await PingHostAsync(targetIp))
             {
                 isWaked = true;
                 break;
@@ -108,7 +108,7 @@ internal class WakeService(
             await command.ModifyOriginalResponseAsync(msg => msg.Content = "❌ Packet sent, but PC did not respond. Check BIOS/Network settings.");
     }
 
-    private async Task<bool> PingHost(string targetIp)
+    private async Task<bool> PingHostAsync(string targetIp)
     {
         using var pinger = new Ping();
         try
