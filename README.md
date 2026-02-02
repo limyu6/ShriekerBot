@@ -47,8 +47,8 @@ After=network.target network-online.target # 在網路完全啟動後才執行
 [Service]
 Type=simple # 類型：簡單 (直接執行)
 User=admin # 使用者：以 admin 身分執行 (避免用 root 造成權限混亂)
-WorkingDirectory=/home/admin/ShriekerBot # 工作目錄：程式的家
-ExecStart={dotnet的路徑} run --configuration Release # 啟動指令：用 dotnet run 執行正式版 (Release)
+WorkingDirectory=/home/admin/ShriekerBot # 工作目錄：程式的地址
+ExecStart=/usr/bin/dotnet /home/admin/ShriekerBot/publish/ShriekerBot.dll # 啟動指令：用 dotnet run 執行正式版 (Release)
 Restart=always # 重啟策略：無論如何都要重啟 (當掉或被殺掉都會復活)
 RestartSec=10 # 重啟間隔：死掉後等 10 秒再復活
 [Install]
@@ -78,6 +78,11 @@ sudo systemctl stop shriekerbot
 cd ~/ShriekerBot
 git pull
 ```
+## c. dotnet publish to get the .dll file
+```
+cd ~/ShriekerBot #if you are not in this directory
+dotnet publish -c Release -o /home/admin/ShriekerBot/publish
+```
 ## c. Start the service：
 ```
 sudo systemctl start shriekerbot
@@ -86,7 +91,7 @@ sudo systemctl start shriekerbot
 ```
 sudo systemctl status shriekerbot
 ```
-# 6. 看Log：
+# 6. Check the Log (If you want)：
 ```
 sudo journalctl -u shriekerbot -f
 ```
