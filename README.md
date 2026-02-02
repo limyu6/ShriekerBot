@@ -83,11 +83,11 @@ git pull
 cd ~/ShriekerBot #if you are not in this directory
 dotnet publish -c Release -o /home/admin/ShriekerBot/publish
 ```
-## c. Start the service：
+## d. Start the service：
 ```
 sudo systemctl start shriekerbot
 ```
-## d. Check Status：
+## e. Check Status：
 ```
 sudo systemctl status shriekerbot
 ```
